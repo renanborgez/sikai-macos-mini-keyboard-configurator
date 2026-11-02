@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Action, Led, Profile, Target } from '../shared/types'
+import type { Action, LayoutId, Led, Profile, Target } from '../shared/types'
 import type { DeviceStatus } from '../main/hid'
 
 export interface RecorderKey {
@@ -14,10 +14,9 @@ export interface RecorderKey {
 
 const api = {
   status: (): Promise<DeviceStatus> => ipcRenderer.invoke('device:status'),
-  upload: (profile: Profile, opts: { led?: boolean } = {}): Promise<void> =>
-    ipcRenderer.invoke('device:upload', profile, opts),
-  uploadOne: (layer: number, target: Target, action: Action): Promise<void> =>
-    ipcRenderer.invoke('device:uploadOne', layer, target, action),
+  upload: (profile: Profile): Promise<void> => ipcRenderer.invoke('device:upload', profile),
+  uploadOne: (layout: LayoutId, layer: number, target: Target, action: Action): Promise<void> =>
+    ipcRenderer.invoke('device:uploadOne', layout, layer, target, action),
   setLed: (layer: number, led: Led): Promise<void> => ipcRenderer.invoke('device:led', layer, led),
   loadProfile: (): Promise<Profile | null> => ipcRenderer.invoke('profile:load'),
   saveProfile: (p: Profile): Promise<void> => ipcRenderer.invoke('profile:save', p),

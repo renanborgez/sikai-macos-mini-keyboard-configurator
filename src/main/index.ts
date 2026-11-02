@@ -1,10 +1,11 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { deviceStatus, writeMessages } from './hid'
+import { connectedProtocol, deviceStatus, writeMessages } from './hid'
 import { encodeBinding, encodeLed, encodeProfile } from '../shared/protocol'
+import { CAPS, getLayout } from '../shared/layouts'
 import { normalizeProfile } from '../shared/profile'
-import type { Action, Led, Profile, Target } from '../shared/types'
+import type { Action, Led, LayoutId, Profile, Target } from '../shared/types'
 
 const profilePath = () => join(app.getPath('userData'), 'profile.json')
 let busy = false
@@ -30,15 +31,32 @@ function createWindow() {
     backgroundColor: '#16171a',
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, contextIsolation: true }
   })
-  if (process.env['ELECTRON_RENDERER_URL']) win.loadURL(process.env['ELECTRON_RENDERER_URL'])
-  else win.loadFile(join(__dirname, '../renderer/index.html'))
-
-  // Debug: MINIKEY_SNAPSHOT=/path/out.png renders the window to a PNG and quits.
+  // Snapshot mode (debug/docs): render a given layout without touching the saved profile.
   const snap = process.env['MINIKEY_SNAPSHOT']
+  const query: Record<string, string> = snap
+    ? {
+        snapshot: '1',
+        layout: process.env['MINIKEY_LAYOUT'] ?? '',
+        side: process.env['MINIKEY_SIDE'] ?? '',
+        defaults: process.env['MINIKEY_DEFAULTS'] ?? ''
+      }
+    : {}
+  if (process.env['ELECTRON_RENDERER_URL'])
+    win.loadURL(`${process.env['ELECTRON_RENDERER_URL']}?${new URLSearchParams(query)}`)
+  else win.loadFile(join(__dirname, '../renderer/index.html'), { query })
+
+  // Debug: MINIKEY_SNAPSHOT=/path/out.png [MINIKEY_LAYOUT=6-1] [MINIKEY_SIDE=right] [MINIKEY_DEFAULTS=1] renders the window to a PNG and quits.
   if (snap) {
     win.webContents.once('did-finish-load', () =>
       setTimeout(async () => {
-        await writeFile(snap, (await win.webContents.capturePage()).toPNG())
+        // MINIKEY_CROP=pad captures just the keyboard drawing (used for the README model gallery).
+        const rect = process.env['MINIKEY_CROP']
+          ? await win.webContents.executeJavaScript(
+              `(() => { const r = document.querySelector('.pad').getBoundingClientRect();
+                return { x: Math.floor(r.x) - 28, y: Math.floor(r.y) - 14, width: Math.ceil(r.width) + 56, height: Math.ceil(r.height) + 28 } })()`
+            )
+          : undefined
+        await writeFile(snap, (await win.webContents.capturePage(rect)).toPNG())
         app.quit()
       }, 1500)
     )
@@ -72,15 +90,21 @@ function createWindow() {
 
   ipcMain.handle('device:status', () => deviceStatus())
 
-  ipcMain.handle('device:upload', (_e, profile: Profile, opts: { led?: boolean }) =>
-    withDevice(() => writeMessages(encodeProfile(normalizeProfile(profile), opts), progress))
+  // Encoding happens here, after we know which chip (protocol) is plugged in.
+  ipcMain.handle('device:upload', (_e, profile: Profile) =>
+    withDevice(() => writeMessages(encodeProfile(normalizeProfile(profile), connectedProtocol()), progress))
   )
 
-  ipcMain.handle('device:uploadOne', (_e, layer: number, target: Target, action: Action) =>
-    withDevice(() => writeMessages(encodeBinding(layer, target, action)))
+  ipcMain.handle('device:uploadOne', (_e, layout: LayoutId, layer: number, target: Target, action: Action) =>
+    withDevice(() => writeMessages(encodeBinding(connectedProtocol(), getLayout(layout), layer, target, action)))
   )
 
-  ipcMain.handle('device:led', (_e, layer: number, led: Led) => withDevice(() => writeMessages(encodeLed(layer, led))))
+  ipcMain.handle('device:led', (_e, layer: number, led: Led) =>
+    withDevice(() => {
+      if (!CAPS[connectedProtocol()].led) throw new Error("This keyboard's lights can't be configured.")
+      return writeMessages(encodeLed(layer, led))
+    })
+  )
 
   ipcMain.handle('profile:load', async () => {
     try {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { KEYS, MEDIA, MODIFIER_CODES, stepLabel, usageFromCode } from '../../shared/keycodes'
-import { MAX_DELAY, MAX_STEPS } from '../../shared/protocol'
+import { MAX_DELAY } from '../../shared/protocol'
 import { Action, KnobPart, Mod, Step, Target } from '../../shared/types'
 
 interface Props {
@@ -12,6 +12,11 @@ interface Props {
   /** For knobs: the three actions shown as tabs. */
   parts?: { part: KnobPart; title: string; summary: string }[]
   onPart?: (p: KnobPart) => void
+  /** Limits of the connected keyboard's chip. */
+  maxSteps: number
+  allowDelay: boolean
+  /** One-row + one-knob boards only take modifiers on the first step. */
+  limited: boolean
 }
 
 const TYPES: { id: Action['type']; label: string }[] = [
@@ -37,13 +42,7 @@ function defaultFor(type: Action['type']): Action {
   }
 }
 
-export function targetName(t: Target) {
-  if (t.kind === 'key') return `Key ${t.index + 1}`
-  const part = { ccw: 'turn left', press: 'press', cw: 'turn right' }[t.part]
-  return `Knob ${t.index + 1} — ${part}`
-}
-
-export default function Editor({ target, action, onChange, onTest, canTest, parts, onPart }: Props) {
+export default function Editor({ target, action, onChange, onTest, canTest, parts, onPart, maxSteps, allowDelay, limited }: Props) {
   return (
     <div className="editor">
       <div className="editor-head">
@@ -74,7 +73,9 @@ export default function Editor({ target, action, onChange, onTest, canTest, part
         ))}
       </div>
 
-      {action.type === 'keys' && <ShortcutEditor action={action} onChange={onChange} />}
+      {action.type === 'keys' && (
+        <ShortcutEditor action={action} onChange={onChange} maxSteps={maxSteps} allowDelay={allowDelay} limited={limited} />
+      )}
 
       {action.type === 'media' && (
         <div className="grid-choices">
@@ -127,7 +128,19 @@ export default function Editor({ target, action, onChange, onTest, canTest, part
   )
 }
 
-function ShortcutEditor({ action, onChange }: { action: Extract<Action, { type: 'keys' }>; onChange: (a: Action) => void }) {
+function ShortcutEditor({
+  action,
+  onChange,
+  maxSteps,
+  allowDelay,
+  limited
+}: {
+  action: Extract<Action, { type: 'keys' }>
+  onChange: (a: Action) => void
+  maxSteps: number
+  allowDelay: boolean
+  limited: boolean
+}) {
   const [recording, setRecording] = useState(false)
   const held = useRef(0)
   const usedKey = useRef(false)
@@ -137,7 +150,7 @@ function ShortcutEditor({ action, onChange }: { action: Extract<Action, { type: 
   actionRef.current = action
 
   const push = (s: Step) => {
-    if (stepsRef.current.length >= MAX_STEPS) return
+    if (stepsRef.current.length >= maxSteps) return
     const next = [...stepsRef.current, s]
     stepsRef.current = next
     onChange({ ...actionRef.current, steps: next })
@@ -243,6 +256,7 @@ function ShortcutEditor({ action, onChange }: { action: Extract<Action, { type: 
             Add
           </button>
         </div>
+        {allowDelay && (
         <label className="delay">
           Delay
           <input
@@ -255,11 +269,21 @@ function ShortcutEditor({ action, onChange }: { action: Extract<Action, { type: 
           />
           ms
         </label>
+        )}
       </div>
       <p className="hint">
-        Hold modifiers for a combo (⌘⇧4). Press several keys to type them in sequence (max {MAX_STEPS}). Click a chip to remove it.
+        Hold modifiers for a combo (⌘⇧4). Press several keys to type them in sequence (max {maxSteps}). Click a chip to remove it.
         Use “Add manually” for shortcuts macOS grabs first, like ⌘Space.
       </p>
+      {limited && action.steps.slice(1).some((s) => s.mods) && (
+        <p className="hint warn">This model only supports modifiers (⌘⌥⌃⇧) on the first key of a sequence.</p>
+      )}
+      {action.steps.length > maxSteps && (
+        <p className="hint warn">This keyboard supports at most {maxSteps} keys per sequence — remove some.</p>
+      )}
+      {!allowDelay && (action.delay ?? 0) > 0 && (
+        <p className="hint warn">This keyboard doesn’t support delays; it will be ignored.</p>
+      )}
     </div>
   )
 }

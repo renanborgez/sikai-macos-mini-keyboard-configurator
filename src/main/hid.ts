@@ -1,38 +1,59 @@
 import HID from 'node-hid'
-import { REPORT_SIZE, SUPPORTED_PRODUCT_IDS, VENDOR_ID } from '../shared/protocol'
+import { FAMILY_VENDOR_IDS, REPORT_SIZE, protocolFor } from '../shared/protocol'
+import type { Protocol } from '../shared/types'
 
 export type DeviceStatus =
-  | { state: 'connected'; productId: number; product: string }
-  | { state: 'unsupported'; productId: number; message: string }
+  | { state: 'connected'; vendorId: number; productId: number; protocol: Protocol }
+  | { state: 'unsupported'; vendorId: number; productId: number; message: string }
   | { state: 'missing' }
 
-const CONFIG_USAGE_PAGE = 0xff00
+/** Vendor-defined usage pages (0xFF00–0xFFFF) carry the configuration channel. */
+const isVendorPage = (d: HID.Device) => (d.usagePage ?? 0) >= 0xff00
 
-function findConfigInterface() {
-  const all = HID.devices().filter((d) => d.vendorId === VENDOR_ID)
-  if (all.length === 0) return { status: { state: 'missing' } as DeviceStatus }
-  const iface = all.find((d) => d.usagePage === CONFIG_USAGE_PAGE && SUPPORTED_PRODUCT_IDS.includes(d.productId))
-  if (!iface) {
-    const pid = all[0].productId
-    return {
-      status: {
-        state: 'unsupported',
-        productId: pid,
-        message:
-          pid === 0x8890
-            ? 'This keyboard uses the 1189:8890 protocol, which this app does not support yet.'
-            : `Unknown product id 0x${pid.toString(16)} (no config interface found).`
-      } as DeviceStatus
+const hex = (n: number) => n.toString(16).padStart(4, '0')
+
+function findConfigInterface(): { iface?: HID.Device; status: DeviceStatus } {
+  const family = HID.devices().filter((d) => FAMILY_VENDOR_IDS.includes(d.vendorId))
+  if (family.length === 0) return { status: { state: 'missing' } }
+
+  // Prefer a device we know the protocol for.
+  for (const d of family) {
+    const protocol = protocolFor(d.vendorId, d.productId)
+    if (!protocol) continue
+    const iface = family.find((x) => x.vendorId === d.vendorId && x.productId === d.productId && isVendorPage(x))
+    if (!iface?.path) {
+      return {
+        status: {
+          state: 'unsupported',
+          vendorId: d.vendorId,
+          productId: d.productId,
+          message: `Found ${hex(d.vendorId)}:${hex(d.productId)} but not its configuration interface. Is it connected by USB cable?`
+        }
+      }
     }
+    return { iface, status: { state: 'connected', vendorId: d.vendorId, productId: d.productId, protocol } }
   }
+
+  const d = family[0]
   return {
-    iface,
-    status: { state: 'connected', productId: iface.productId, product: iface.product ?? 'Mini keyboard' } as DeviceStatus
+    status: {
+      state: 'unsupported',
+      vendorId: d.vendorId,
+      productId: d.productId,
+      message: `Keyboard ${hex(d.vendorId)}:${hex(d.productId)} isn't supported yet.`
+    }
   }
 }
 
 export function deviceStatus(): DeviceStatus {
   return findConfigInterface().status
+}
+
+/** Protocol of the connected keyboard, or an error explaining why we can't write to it. */
+export function connectedProtocol(): Protocol {
+  const { status } = findConfigInterface()
+  if (status.state === 'connected') return status.protocol
+  throw new Error(status.state === 'unsupported' ? status.message : 'Keyboard not connected. Plug it in with a USB cable.')
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
@@ -47,7 +68,7 @@ export async function writeMessages(
 ): Promise<void> {
   const { iface, status } = findConfigInterface()
   if (!iface?.path) {
-    throw new Error(status.state === 'unsupported' ? status.message : 'Keyboard not connected. Plug it in with USB.')
+    throw new Error(status.state === 'unsupported' ? status.message : 'Keyboard not connected. Plug it in with a USB cable.')
   }
   const dev = await HID.HIDAsync.open(iface.path)
   try {

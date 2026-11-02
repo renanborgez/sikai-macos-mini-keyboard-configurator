@@ -1,13 +1,22 @@
 import { actionLabel } from '../../shared/keycodes'
-import type { Layer, Target } from '../../shared/types'
+import { LayoutDef, keyCount } from '../../shared/layouts'
+import type { KnobSide, Layer, Target } from '../../shared/types'
 
 interface Props {
+  layout: LayoutDef
+  knobSide: KnobSide
   layer: Layer
   selected: Target | null
   onSelect: (t: Target) => void
 }
 
-function Dial({ index, size, layer, selected, onSelect }: { index: number; size: 'big' | 'small' } & Props) {
+function Dial({
+  index,
+  size,
+  layer,
+  selected,
+  onSelect
+}: { index: number; size: 'big' | 'small' } & Pick<Props, 'layer' | 'selected' | 'onSelect'>) {
   const knob = layer.knobs[index]
   const active = selected?.kind === 'knob' && selected.index === index
   const ccw = actionLabel(knob.ccw)
@@ -36,19 +45,30 @@ function Dial({ index, size, layer, selected, onSelect }: { index: number; size:
   )
 }
 
-export default function Pad(props: Props) {
-  const { layer, selected, onSelect } = props
+export default function Pad({ layout, knobSide, layer, selected, onSelect }: Props) {
+  const knobs = layout.knobs
+  // Single-row boards are short: draw their knob at the small size so the body stays compact.
+  const bigFirst = layout.rows > 1
   return (
-    <div className="pad">
-      <div className="pad-knobs">
-        <Dial index={0} size="big" {...props} />
-        <div className="pad-small">
-          <Dial index={1} size="small" {...props} />
-          <Dial index={2} size="small" {...props} />
+    <div
+      className={`pad knobs-${knobSide}${knobs === 0 ? ' no-knobs' : ''}`}
+      data-layout={layout.id}
+    >
+      {knobs > 0 && (
+        <div className={`pad-knobs count-${knobs}`}>
+          {bigFirst && <Dial index={0} size="big" layer={layer} selected={selected} onSelect={onSelect} />}
+          <div className="pad-small">
+            {Array.from({ length: knobs }, (_, k) => k)
+              .filter((k) => !bigFirst || k > 0)
+              .map((k) => (
+                <Dial key={k} index={k} size="small" layer={layer} selected={selected} onSelect={onSelect} />
+              ))}
+          </div>
         </div>
-      </div>
-      <div className="pad-keys">
-        {layer.keys.map((a, i) => {
+      )}
+      <div className="pad-keys" style={{ gridTemplateColumns: `repeat(${layout.cols}, 84px)`, gridTemplateRows: `repeat(${layout.rows}, 84px)` }}>
+        {Array.from({ length: keyCount(layout) }, (_, i) => {
+          const a = layer.keys[i]
           const text = actionLabel(a)
           const active = selected?.kind === 'key' && selected.index === i
           return (

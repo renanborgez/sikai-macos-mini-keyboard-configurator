@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import Pad from './Pad'
 import logo from './assets/logo.svg'
-import Editor, { targetName } from './Editor'
+import Editor from './Editor'
+import { targetName } from '../../shared/protocol'
+import { CAPS, LAYOUTS, getLayout, isLimited, keyCount, layoutSupported } from '../../shared/layouts'
 import { defaultProfile, sanitizeLed } from '../../shared/profile'
 import { actionLabel } from '../../shared/keycodes'
-import { Action, KnobPart, LED_COLORS, Led, LedMode, NUM_LAYERS, Profile, Target } from '../../shared/types'
+import { Action, KnobPart, LED_COLORS, LayoutId, Led, LedMode, NUM_LAYERS, Profile, Target } from '../../shared/types'
 import type { DeviceStatus } from '../../main/hid'
 
 const LED_MODES: { id: LedMode; label: string }[] = [
@@ -14,6 +16,9 @@ const LED_MODES: { id: LedMode; label: string }[] = [
   { id: 'shock', label: 'Shock' },
   { id: 'shock2', label: 'Shock 2' }
 ]
+
+/** Screenshot mode (see MINIKEY_SNAPSHOT in main): never writes the saved profile. */
+const SNAPSHOT = new URLSearchParams(location.search).has('snapshot')
 
 type Toast = { kind: 'ok' | 'err'; text: string } | null
 
@@ -45,6 +50,12 @@ export default function App() {
   // Load saved profile
   useEffect(() => {
     window.miniKey.loadProfile().then((p) => {
+      if (SNAPSHOT) {
+        const q = new URLSearchParams(location.search)
+        const base = q.get('defaults') ? defaultProfile() : (p ?? defaultProfile())
+        setProfile({ ...base, layout: getLayout(q.get('layout') || base.layout).id, knobSide: q.get('side') === 'right' ? 'right' : base.knobSide })
+        return
+      }
       setProfile(p ?? defaultProfile())
       setDirty(!p)
       loaded.current = true
@@ -55,7 +66,7 @@ export default function App() {
 
   // Autosave locally
   useEffect(() => {
-    if (!profile || !loaded.current) return
+    if (!profile || !loaded.current || SNAPSHOT) return
     const t = setTimeout(() => window.miniKey.saveProfile(profile).catch((e) => console.error('autosave failed', e)), 300)
     return () => clearTimeout(t)
   }, [profile])
@@ -109,7 +120,7 @@ export default function App() {
   const sendOne = async () => {
     if (!selected) return
     try {
-      await window.miniKey.uploadOne(layer, selected, getAction(profile, layer, selected))
+      await window.miniKey.uploadOne(profile.layout, layer, selected, getAction(profile, layer, selected))
       setToast({ kind: 'ok', text: `Sent ${targetName(selected)} (layer ${layer + 1}).` })
     } catch (e) {
       fail(e)
@@ -120,6 +131,17 @@ export default function App() {
   const setLed = (raw: Led) => {
     const l = sanitizeLed(raw)
     update({ ...profile, layers: profile.layers.map((x, i) => (i === layer ? { ...x, led: l } : x)) })
+  }
+
+  const layout = getLayout(profile.layout)
+  const protocol = status.state === 'connected' ? status.protocol : undefined
+  // Without a keyboard plugged in, allow everything the most capable chip allows.
+  const caps = CAPS[protocol ?? '884x']
+  const setLayout = (id: LayoutId) => {
+    const next = getLayout(id)
+    // Drop a selection that doesn't exist on the new model.
+    if (selected && (selected.kind === 'key' ? selected.index >= keyCount(next) : selected.index >= next.knobs)) setSelected(null)
+    update({ ...profile, layout: id })
   }
 
   const sel = selected
@@ -146,9 +168,33 @@ export default function App() {
           <img src={logo} alt="" />
           Mini Key
         </div>
+        <div className="model">
+          <select
+            value={profile.layout}
+            onChange={(e) => setLayout(e.target.value as LayoutId)}
+            title="Your keyboard's model"
+          >
+            {LAYOUTS.map((l) => (
+              <option key={l.id} value={l.id} disabled={!!protocol && !layoutSupported(l, protocol)}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+          {layout.knobs > 0 && (
+            <button
+              className="ghost small mirror"
+              title="Knobs on the other side"
+              onClick={() => update({ ...profile, knobSide: profile.knobSide === 'left' ? 'right' : 'left' })}
+            >
+              ⇆
+            </button>
+          )}
+        </div>
         <div className={`status ${status.state}`}>
           <span className="dot" />
-          {status.state === 'connected' && 'Keyboard connected'}
+          {status.state === 'connected' && (protocol && !layoutSupported(layout, protocol)
+            ? 'Connected — this chip doesn’t support the selected model'
+            : 'Keyboard connected')}
           {status.state === 'missing' && 'Plug in the keyboard with USB'}
           {status.state === 'unsupported' && status.message}
         </div>
@@ -191,26 +237,28 @@ export default function App() {
               </button>
             ))}
           </div>
-          <div className="led">
-            <span className="led-label">Lights</span>
-            <select value={led.mode} onChange={(e) => setLed({ ...led, mode: e.target.value as LedMode })}>
-              {LED_MODES.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-            {led.mode !== 'off' && (
-              <div className="swatches">
-                {LED_COLORS.filter((c) => c !== 'white' || led.mode === 'backlight').map((c) => (
-                  <button key={c} className={`swatch ${c}${led.color === c ? ' on' : ''}`} onClick={() => setLed({ ...led, color: c })} title={c} />
+          {caps.led && (
+            <div className="led">
+              <span className="led-label">Lights</span>
+              <select value={led.mode} onChange={(e) => setLed({ ...led, mode: e.target.value as LedMode })}>
+                {LED_MODES.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
                 ))}
-              </div>
-            )}
-          </div>
+              </select>
+              {led.mode !== 'off' && (
+                <div className="swatches">
+                  {LED_COLORS.filter((c) => c !== 'white' || led.mode === 'backlight').map((c) => (
+                    <button key={c} className={`swatch ${c}${led.color === c ? ' on' : ''}`} onClick={() => setLed({ ...led, color: c })} title={c} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <Pad layer={profile.layers[layer]} selected={selected} onSelect={setSelected} />
+        <Pad layout={layout} knobSide={profile.knobSide} layer={profile.layers[layer]} selected={selected} onSelect={setSelected} />
 
         <div className="stage-note">
           {toast ? (
@@ -234,6 +282,9 @@ export default function App() {
             canTest={connected && !busy}
             parts={parts}
             onPart={(part) => selected.kind === 'knob' && setSelected({ ...selected, part })}
+            maxSteps={caps.maxSteps}
+            allowDelay={caps.delay}
+            limited={isLimited(layout)}
           />
         ) : (
           <div className="dock-empty">

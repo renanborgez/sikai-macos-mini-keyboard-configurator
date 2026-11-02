@@ -1,6 +1,13 @@
-export const NUM_KEYS = 15
-export const NUM_KNOBS = 3
+/** Storage size of a profile layer: the largest supported layouts (15 keys, or 4 knobs). */
+export const MAX_KEYS = 15
+export const MAX_KNOBS = 4
 export const NUM_LAYERS = 3
+
+/** Wire protocol family, decided by the connected device's USB ID. */
+export type Protocol = '884x' | '8890'
+
+export type LayoutId = '15-3' | '12-4' | '12-3' | '12-2' | '9-2' | '6-1' | '4-0' | '3-1'
+export type KnobSide = 'left' | 'right'
 
 /** Modifier bitmask (HID standard). On a Mac, "win" is ⌘ and "alt" is ⌥. */
 export const Mod = {
@@ -54,6 +61,10 @@ export interface Layer {
 
 export interface Profile {
   version: 1
+  /** Physical model of the keyboard (number of keys / knobs). */
+  layout: LayoutId
+  /** Which side of the keyboard the knobs are on (drawing only). */
+  knobSide: KnobSide
   layers: Layer[]
 }
 

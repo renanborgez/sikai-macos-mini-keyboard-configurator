@@ -1,4 +1,5 @@
-import { Action, Knob, LED_COLORS, Layer, Led, LedColor, LedMode, Mod, NUM_KEYS, NUM_KNOBS, NUM_LAYERS, Profile } from './types'
+import { Action, KnobSide, Knob, LED_COLORS, Layer, Led, LedColor, LedMode, MAX_KEYS, MAX_KNOBS, Mod, NUM_LAYERS, Profile } from './types'
+import { DEFAULT_LAYOUT, getLayout } from './layouts'
 import { MAX_DELAY, MAX_STEPS } from './protocol'
 
 const none: Action = { type: 'none' }
@@ -7,8 +8,8 @@ const media = (code: number): Action => ({ type: 'media', code })
 
 function emptyLayer(): Layer {
   return {
-    keys: Array.from({ length: NUM_KEYS }, () => ({ ...none })),
-    knobs: Array.from({ length: NUM_KNOBS }, (): Knob => ({ ccw: none, press: none, cw: none })),
+    keys: Array.from({ length: MAX_KEYS }, () => ({ ...none })),
+    knobs: Array.from({ length: MAX_KNOBS }, (): Knob => ({ ccw: none, press: none, cw: none })),
     led: { mode: 'backlight', color: 'white' }
   }
 }
@@ -39,7 +40,7 @@ export function defaultProfile(): Profile {
   l.knobs[0] = { ccw: media(0xea), press: media(0xe2), cw: media(0xe9) }
   l.knobs[1] = { ccw: media(0x70), press: none, cw: media(0x6f) }
   l.knobs[2] = { ccw: { type: 'wheel', delta: -1 }, press: none, cw: { type: 'wheel', delta: 1 } }
-  return { version: 1, layers }
+  return { version: 1, layout: DEFAULT_LAYOUT, knobSide: 'left', layers }
 }
 
 const LED_MODES: LedMode[] = ['off', 'backlight', 'shock', 'shock2', 'press']
@@ -85,8 +86,10 @@ export function sanitizeLed(raw: unknown): Led {
 /** Fill in anything missing from a loaded/imported profile and drop invalid values. */
 export function normalizeProfile(raw: unknown): Profile {
   const base = defaultProfile()
-  const p = raw as { layers?: unknown } | null
+  const p = raw as { layers?: unknown; layout?: unknown; knobSide?: unknown } | null
   if (!p || typeof p !== 'object' || !Array.isArray(p.layers)) return base
+  base.layout = getLayout(p.layout as string).id
+  base.knobSide = (p.knobSide === 'right' ? 'right' : 'left') as KnobSide
   const srcLayers = p.layers as unknown[]
   base.layers = base.layers.map((_, l) => {
     const src = srcLayers[l] as { keys?: unknown[]; knobs?: Record<string, unknown>[]; led?: unknown } | undefined
@@ -94,8 +97,8 @@ export function normalizeProfile(raw: unknown): Profile {
     const keys = Array.isArray(src.keys) ? src.keys : []
     const knobs = Array.isArray(src.knobs) ? src.knobs : []
     return {
-      keys: Array.from({ length: NUM_KEYS }, (_, i) => sanitizeAction(keys[i])),
-      knobs: Array.from({ length: NUM_KNOBS }, (_, i) => ({
+      keys: Array.from({ length: MAX_KEYS }, (_, i) => sanitizeAction(keys[i])),
+      knobs: Array.from({ length: MAX_KNOBS }, (_, i) => ({
         ccw: sanitizeAction(knobs[i]?.ccw),
         press: sanitizeAction(knobs[i]?.press),
         cw: sanitizeAction(knobs[i]?.cw)

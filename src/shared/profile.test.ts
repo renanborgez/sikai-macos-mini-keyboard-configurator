@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { defaultProfile, normalizeProfile, sanitizeAction, sanitizeLed } from './profile'
 import { encodeProfile } from './protocol'
-import { NUM_KEYS, NUM_KNOBS, NUM_LAYERS } from './types'
+import { MAX_KEYS, MAX_KNOBS, NUM_LAYERS } from './types'
 
 describe('profile validation', () => {
   it('round-trips the default profile unchanged', () => {
@@ -28,10 +28,10 @@ describe('profile validation', () => {
       ]
     })
     for (const l of p.layers) {
-      expect(l.keys).toHaveLength(NUM_KEYS)
-      expect(l.knobs).toHaveLength(NUM_KNOBS)
+      expect(l.keys).toHaveLength(MAX_KEYS)
+      expect(l.knobs).toHaveLength(MAX_KNOBS)
     }
-    expect(() => encodeProfile(p)).not.toThrow()
+    expect(() => encodeProfile(p, '884x')).not.toThrow()
   })
 
   it('clamps action values into protocol ranges', () => {
@@ -47,6 +47,16 @@ describe('profile validation', () => {
     expect(sanitizeAction({ type: 'wheel', delta: -500 })).toMatchObject({ delta: -127 })
     expect(sanitizeAction({ type: 'click', buttons: 0 })).toMatchObject({ buttons: 1 })
     expect(sanitizeAction({ type: 'nope' })).toEqual({ type: 'none' })
+  })
+
+  it('keeps layout and knob side, falling back for unknown values', () => {
+    expect(normalizeProfile({ layers: [], layout: '6-1', knobSide: 'right' })).toMatchObject({ layout: '6-1', knobSide: 'right' })
+    expect(normalizeProfile({ layers: [], layout: 'nope', knobSide: 'up' })).toMatchObject({ layout: '15-3', knobSide: 'left' })
+  })
+
+  it('upgrades old 3-knob profiles to 4 knob slots', () => {
+    const old = { layers: [{ keys: [], knobs: [{}, {}, {}] }] }
+    expect(normalizeProfile(old).layers[0].knobs).toHaveLength(MAX_KNOBS)
   })
 
   it('never sends white for non-backlight LED modes', () => {

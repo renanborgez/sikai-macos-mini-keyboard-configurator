@@ -34,7 +34,7 @@ function setAction(p: Profile, layer: number, t: Target, a: Action): Profile {
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [layer, setLayer] = useState(0)
-  const [selected, setSelected] = useState<Target>({ kind: 'key', index: 0 })
+  const [selected, setSelected] = useState<Target | null>(null)
   const [status, setStatus] = useState<DeviceStatus>({ state: 'missing' })
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [dirty, setDirty] = useState(false)
@@ -66,6 +66,13 @@ export default function App() {
     tick()
     const id = setInterval(tick, 1500)
     return () => clearInterval(id)
+  }, [])
+
+  // Esc clears the selection. (While recording a shortcut, keys go to the recorder instead.)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   useEffect(() => {
@@ -100,6 +107,7 @@ export default function App() {
   }
 
   const sendOne = async () => {
+    if (!selected) return
     try {
       await window.miniKey.uploadOne(layer, selected, getAction(profile, layer, selected))
       setToast({ kind: 'ok', text: `Sent ${targetName(selected)} (layer ${layer + 1}).` })
@@ -115,7 +123,7 @@ export default function App() {
   }
 
   const sel = selected
-  const knob = sel.kind === 'knob' ? profile.layers[layer].knobs[sel.index] : null
+  const knob = sel?.kind === 'knob' ? profile.layers[layer].knobs[sel.index] : null
   const parts: { part: KnobPart; title: string; summary: string }[] | undefined = knob
     ? [
         { part: 'ccw', title: '⟲ Turn left', summary: actionLabel(knob.ccw) },
@@ -125,7 +133,14 @@ export default function App() {
     : undefined
 
   return (
-    <div className="app">
+    <div
+      className="app"
+      onMouseDown={(e) => {
+        // Clicking empty space outside the keyboard (and outside the editor/controls) clears the selection.
+        const el = e.target as HTMLElement
+        if (!el.closest('.pad, .dock, button, select, input, label')) setSelected(null)
+      }}
+    >
       <header className="titlebar">
         <div className="brand">
           <img src={logo} alt="" />
@@ -209,16 +224,23 @@ export default function App() {
       </main>
 
       <section className="dock">
-        <Editor
-          key={`${layer}:${selected.kind}:${selected.index}:${selected.kind === 'knob' ? selected.part : ''}`}
-          target={selected}
-          action={getAction(profile, layer, selected)}
-          onChange={(a) => update(setAction(profile, layer, selected, a))}
-          onTest={sendOne}
-          canTest={connected && !busy}
-          parts={parts}
-          onPart={(part) => sel.kind === 'knob' && setSelected({ ...sel, part })}
-        />
+        {selected ? (
+          <Editor
+            key={`${layer}:${selected.kind}:${selected.index}:${selected.kind === 'knob' ? selected.part : ''}`}
+            target={selected}
+            action={getAction(profile, layer, selected)}
+            onChange={(a) => update(setAction(profile, layer, selected, a))}
+            onTest={sendOne}
+            canTest={connected && !busy}
+            parts={parts}
+            onPart={(part) => selected.kind === 'knob' && setSelected({ ...selected, part })}
+          />
+        ) : (
+          <div className="dock-empty">
+            <div className="dock-empty-title">Nothing selected</div>
+            <div>Click a key or a knob on the keyboard above to change what it does.</div>
+          </div>
+        )}
       </section>
     </div>
   )

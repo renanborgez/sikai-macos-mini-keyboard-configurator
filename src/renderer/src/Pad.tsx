@@ -3,20 +3,20 @@ import type { Layer, Target } from '../../shared/types'
 
 interface Props {
   layer: Layer
-  selected: Target
+  selected: Target | null
   onSelect: (t: Target) => void
 }
 
 function Dial({ index, size, layer, selected, onSelect }: { index: number; size: 'big' | 'small' } & Props) {
   const knob = layer.knobs[index]
-  const active = selected.kind === 'knob' && selected.index === index
+  const active = selected?.kind === 'knob' && selected.index === index
   const ccw = actionLabel(knob.ccw)
   const cw = actionLabel(knob.cw)
   const press = actionLabel(knob.press)
   return (
     <button
       className={`dial-wrap ${size}${active ? ' active' : ''}`}
-      onClick={() => onSelect({ kind: 'knob', index, part: active ? selected.part : 'ccw' })}
+      onClick={() => onSelect({ kind: 'knob', index, part: selected?.kind === 'knob' && active ? selected.part : 'ccw' })}
     >
       <span className="dial">
         <span className="dial-mark" />
@@ -50,7 +50,7 @@ export default function Pad(props: Props) {
       <div className="pad-keys">
         {layer.keys.map((a, i) => {
           const text = actionLabel(a)
-          const active = selected.kind === 'key' && selected.index === i
+          const active = selected?.kind === 'key' && selected.index === i
           return (
             <button
               key={i}

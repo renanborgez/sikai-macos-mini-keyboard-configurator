@@ -1,0 +1,47 @@
+{
+  "name": "mini-key",
+  "version": "0.1.0",
+  "description": "macOS configurator for 1189:884x programmable mini keyboards",
+  "main": "./out/main/index.js",
+  "author": "renan",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build:mac": "electron-vite build && electron-builder --mac --dir"
+  },
+  "build": {
+    "appId": "dev.minikey.app",
+    "productName": "Mini Key",
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": "dir",
+      "identity": null
+    },
+    "npmRebuild": false
+  },
+  "dependencies": {
+    "node-hid": "^3.4.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
+  }
+}

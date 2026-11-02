@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2e3137"/>
+      <stop offset="1" stop-color="#121316"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#b3b7bc"/>
+      <stop offset="0.55" stop-color="#7d8186"/>
+      <stop offset="1" stop-color="#5c6065"/>
+    </linearGradient>
+    <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#34363b"/>
+      <stop offset="1" stop-color="#18191c"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff6a5c"/>
+      <stop offset="1" stop-color="#e5322f"/>
+    </linearGradient>
+    <radialGradient id="knob" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#3a3d42"/>
+      <stop offset="1" stop-color="#0f1012"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity=".55"/>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+  </defs>
+
+  <!-- macOS squircle tile -->
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="184.5" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="3"/>
+
+  <!-- device body: big rounded top-left corner like the real pad -->
+  <path filter="url(#shadow)" fill="url(#body)"
+        d="M 340 292 H 798 Q 838 292 838 332 V 692 Q 838 732 798 732 H 226 Q 186 732 186 692 V 446 Q 186 292 340 292 Z"/>
+  <path fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="3"
+        d="M 340 293.5 H 798 Q 836.5 293.5 836.5 332"/>
+
+  <!-- big knob -->
+  <g filter="url(#soft)">
+    <circle cx="322" cy="440" r="92" fill="#0b0c0e"/>
+    <circle cx="322" cy="440" r="80" fill="url(#knob)"/>
+  </g>
+  <rect x="316" y="372" width="12" height="44" rx="6" fill="#f2f3f5"/>
+
+  <!-- small knob -->
+  <g filter="url(#soft)">
+    <circle cx="322" cy="632" r="54" fill="#0b0c0e"/>
+    <circle cx="322" cy="632" r="45" fill="url(#knob)"/>
+  </g>
+  <rect x="317.5" y="593" width="9" height="26" rx="4.5" fill="#f2f3f5"/>
+
+  <!-- keys 3x3 -->
+  <g filter="url(#soft)">
+    <rect x="452" y="334" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="574" y="334" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="696" y="334" width="102" height="102" rx="18" fill="url(#red)"/>
+    <rect x="452" y="461" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="574" y="461" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="696" y="461" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="452" y="588" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="574" y="588" width="102" height="102" rx="18" fill="url(#cap)"/>
+    <rect x="696" y="588" width="102" height="102" rx="18" fill="url(#cap)"/>
+  </g>
+  <!-- key top highlights -->
+  <g fill="#ffffff" fill-opacity=".07">
+    <rect x="462" y="342" width="82" height="70" rx="12"/>
+    <rect x="584" y="342" width="82" height="70" rx="12"/>
+    <rect x="462" y="469" width="82" height="70" rx="12"/>
+    <rect x="584" y="469" width="82" height="70" rx="12"/>
+    <rect x="706" y="469" width="82" height="70" rx="12"/>
+    <rect x="462" y="596" width="82" height="70" rx="12"/>
+    <rect x="584" y="596" width="82" height="70" rx="12"/>
+    <rect x="706" y="596" width="82" height="70" rx="12"/>
+  </g>
+  <rect x="706" y="342" width="82" height="70" rx="12" fill="#ffffff" fill-opacity=".18"/>
+  <!-- ⌘ glyph on the red key -->
+  <path fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"
+        d="M 733 370 h 30 v 30 h -30 z
+           M 733 370 a 11 11 0 1 1 -11 -11 a 11 11 0 0 1 11 11 z
+           M 763 370 a 11 11 0 1 0 11 -11 a 11 11 0 0 0 -11 11 z
+           M 733 400 a 11 11 0 1 0 -11 11 a 11 11 0 0 0 11 -11 z
+           M 763 400 a 11 11 0 1 1 11 11 a 11 11 0 0 1 -11 -11 z"/>
+</svg>

@@ -9,7 +9,13 @@
   3 to 15 keys, up to 4 knobs: the CH57x-based pads sold under many brands on Amazon and AliExpress
 </p>
 
-![Mini Key screenshot](docs/screenshot.png)
+| 15 keys · 3 knobs | 12 keys · 4 knobs | 9 keys · 2 knobs |
+| :---: | :---: | :---: |
+| <img src="docs/models/15-3.png" width="260" alt="15 keys 3 knobs"> | <img src="docs/models/12-4.png" width="220" alt="12 keys 4 knobs"> | <img src="docs/models/9-2.png" width="190" alt="9 keys 2 knobs"> |
+| **6 keys · 1 knob** | **4 keys · no knob** | **3 keys · 1 knob** |
+| <img src="docs/models/6-1.png" width="200" alt="6 keys 1 knob"> | <img src="docs/models/4-0.png" width="180" alt="4 keys"> | <img src="docs/models/3-1.png" width="200" alt="3 keys 1 knob"> |
+
+The model list also includes **12 keys · 3 knobs** and **12 keys · 2 knobs**.
 
 The official configuration software for these keyboards is Windows-only and Chinese-only. Mini Key
 lets you program the keys, knobs, layers and lights **from a Mac**. Settings are written to the
@@ -78,14 +84,7 @@ Hardware reports for the untested IDs are very welcome. Please open an issue.
 
 The same USB ID is used for many different physical layouts, and the keyboard can't report which one
 it is. So you choose your model from the drop-down in the top bar. Use **⇆** if your knobs are on the right.
-
-| 15 keys · 3 knobs | 12 keys · 4 knobs | 9 keys · 2 knobs |
-| :---: | :---: | :---: |
-| <img src="docs/models/15-3.png" width="260" alt="15 keys 3 knobs"> | <img src="docs/models/12-4.png" width="220" alt="12 keys 4 knobs"> | <img src="docs/models/9-2.png" width="190" alt="9 keys 2 knobs"> |
-| **6 keys · 1 knob** | **4 keys · no knob** | **3 keys · 1 knob** |
-| <img src="docs/models/6-1.png" width="200" alt="6 keys 1 knob"> | <img src="docs/models/4-0.png" width="180" alt="4 keys"> | <img src="docs/models/3-1.png" width="200" alt="3 keys 1 knob"> |
-
-The model list also includes **12 keys · 3 knobs** and **12 keys · 2 knobs**.
+The drawings for each model are at the top of this page.
 
 | Model | Grid | Knobs | 884x | 8890 |
 | --- | --- | --- | :---: | :---: |
@@ -478,7 +477,6 @@ npm run build:mac   # unsigned .app into dist/mac-arm64/
 **Screenshots for the docs.** `npm run build`, then:
 
 ```bash
-MINIKEY_SNAPSHOT=$PWD/docs/screenshot.png MINIKEY_DEFAULTS=1 npx electron .
 MINIKEY_SNAPSHOT=$PWD/docs/models/6-1.png MINIKEY_DEFAULTS=1 MINIKEY_LAYOUT=6-1 MINIKEY_CROP=pad npx electron .
 ```
 

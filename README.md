@@ -9,13 +9,36 @@
   3 to 15 keys, up to 4 knobs: the CH57x-based pads sold under many brands on Amazon and AliExpress
 </p>
 
-| 15 keys · 3 knobs | 12 keys · 4 knobs | 9 keys · 2 knobs |
-| :---: | :---: | :---: |
-| <img src="docs/models/15-3.png" width="260" alt="15 keys 3 knobs"> | <img src="docs/models/12-4.png" width="220" alt="12 keys 4 knobs"> | <img src="docs/models/9-2.png" width="190" alt="9 keys 2 knobs"> |
-| **6 keys · 1 knob** | **4 keys · no knob** | **3 keys · 1 knob** |
-| <img src="docs/models/6-1.png" width="200" alt="6 keys 1 knob"> | <img src="docs/models/4-0.png" width="180" alt="4 keys"> | <img src="docs/models/3-1.png" width="200" alt="3 keys 1 knob"> |
+<table align="center">
+  <tr>
+    <th>15 keys · 3 knobs</th>
+    <th>12 keys · 4 knobs</th>
+    <th>9 keys · 2 knobs</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/models/15-3.png" width="260" alt="15 keys 3 knobs"></td>
+    <td align="center"><img src="docs/models/12-4.png" width="220" alt="12 keys 4 knobs"></td>
+    <td align="center"><img src="docs/models/9-2.png" width="190" alt="9 keys 2 knobs"></td>
+  </tr>
+  <tr>
+    <th>6 keys · 1 knob</th>
+    <th>4 keys · no knob</th>
+    <th>3 keys · 1 knob</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/models/6-1.png" width="200" alt="6 keys 1 knob"></td>
+    <td align="center"><img src="docs/models/4-0.png" width="180" alt="4 keys"></td>
+    <td align="center"><img src="docs/models/3-1.png" width="200" alt="3 keys 1 knob"></td>
+  </tr>
+</table>
 
-The model list also includes **12 keys · 3 knobs** and **12 keys · 2 knobs**.
+<p align="center">
+  The model list also includes <b>12 keys · 3 knobs</b> and <b>12 keys · 2 knobs</b>.
+</p>
+
+<p align="center">
+  <img src="docs/screenshot.png" width="820" alt="Mini Key app screenshot">
+</p>
 
 The official configuration software for these keyboards is Windows-only and Chinese-only. Mini Key
 lets you program the keys, knobs, layers and lights **from a Mac**. Settings are written to the
@@ -477,6 +500,7 @@ npm run build:mac   # unsigned .app into dist/mac-arm64/
 **Screenshots for the docs.** `npm run build`, then:
 
 ```bash
+MINIKEY_SNAPSHOT=$PWD/docs/screenshot.png MINIKEY_DEFAULTS=1 npx electron .
 MINIKEY_SNAPSHOT=$PWD/docs/models/6-1.png MINIKEY_DEFAULTS=1 MINIKEY_LAYOUT=6-1 MINIKEY_CROP=pad npx electron .
 ```
 

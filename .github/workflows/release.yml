@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to build and attach to (e.g. v0.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            script: dist:mac
+            files: dist/Mini-Key-mac.dmg
+          - os: windows-latest
+            script: dist:win
+            files: dist/Mini-Key-windows-setup.exe
+          - os: ubuntu-latest
+            script: dist:linux
+            files: dist/Mini-Key-linux-amd64.deb
+    runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run ${{ matrix.script }}
+      - name: Create release if missing
+        shell: bash
+        run: gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "Mini Key $TAG" --generate-notes || true
+      - name: Upload
+        shell: bash
+        run: gh release upload "$TAG" ${{ matrix.files }} --clobber

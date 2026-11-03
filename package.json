@@ -1,9 +1,12 @@
 {
   "name": "mini-key",
   "version": "0.1.0",
-  "description": "macOS configurator for 1189:884x programmable mini keyboards",
+  "description": "Configurator for SIKAI / 1189:884x programmable mini keyboards",
   "main": "./out/main/index.js",
-  "author": "renan",
+  "author": {
+    "name": "Renan Garcia Borges",
+    "email": "renangarciaborges@icloud.com"
+  },
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -12,7 +15,10 @@
     "start": "electron-vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build:mac": "electron-vite build && electron-builder --mac --dir"
+    "build:mac": "electron-vite build && electron-builder --mac --dir",
+    "dist:mac": "electron-vite build && electron-builder --mac --publish never",
+    "dist:win": "electron-vite build && electron-builder --win --publish never",
+    "dist:linux": "electron-vite build && electron-builder --linux --publish never"
   },
   "build": {
     "appId": "dev.minikey.app",
@@ -21,11 +27,52 @@
       "out/**/*",
       "package.json"
     ],
+    "npmRebuild": false,
     "mac": {
-      "target": "dir",
-      "identity": null
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "identity": null,
+      "category": "public.app-category.utilities",
+      "x64ArchFiles": "**/node_modules/node-hid/prebuilds/**",
+      "artifactName": "Mini-Key-mac.${ext}"
     },
-    "npmRebuild": false
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Mini-Key-windows-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "maintainer": "Renan Garcia Borges <renangarciaborges@icloud.com>",
+      "artifactName": "Mini-Key-linux-amd64.${ext}"
+    },
+    "deb": {
+      "afterInstall": "build/linux/after-install.sh"
+    }
   },
   "dependencies": {
     "node-hid": "^3.4.0",
@@ -43,5 +90,6 @@
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vitest": "^2.1.9"
-  }
+  },
+  "homepage": "https://github.com/renanborgez/sikai-macos-mini-keyboard-configurator"
 }

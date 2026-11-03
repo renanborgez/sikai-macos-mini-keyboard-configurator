@@ -27,7 +27,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 720,
     title: 'Mini Key',
-    titleBarStyle: 'hiddenInset',
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' as const } : { autoHideMenuBar: true }),
     backgroundColor: '#16171a',
     webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: true, contextIsolation: true }
   })

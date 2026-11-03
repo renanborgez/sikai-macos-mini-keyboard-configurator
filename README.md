@@ -9,6 +9,13 @@
   3 to 15 keys, up to 4 knobs: the CH57x-based pads sold under many brands on Amazon and AliExpress
 </p>
 
+<p align="center">
+  <a href="https://github.com/renanborgez/sikai-macos-mini-keyboard-configurator/releases/latest/download/Mini-Key-mac.dmg"><img src="https://img.shields.io/badge/Download-macOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS" height="36"></a>
+  <a href="https://github.com/renanborgez/sikai-macos-mini-keyboard-configurator/releases/latest/download/Mini-Key-windows-setup.exe"><img src="https://img.shields.io/badge/Download-Windows-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows" height="36"></a>
+  <a href="https://github.com/renanborgez/sikai-macos-mini-keyboard-configurator/releases/latest/download/Mini-Key-linux-amd64.deb"><img src="https://img.shields.io/badge/Download-Linux%20.deb-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Download .deb for Linux" height="36"></a>
+</p>
+<p align="center"><sub>macOS: universal (Apple Silicon + Intel) · Windows: x64 installer · Linux: Debian/Ubuntu x64 · <a href="https://github.com/renanborgez/sikai-macos-mini-keyboard-configurator/releases">all releases</a></sub></p>
+
 <table align="center">
   <tr>
     <th>15 keys · 3 knobs</th>
@@ -146,7 +153,19 @@ the top bar if it finds a keyboard of this family that it can't program.
 
 ## Install & run
 
-Requirements: macOS (Apple Silicon or Intel), [Node.js](https://nodejs.org) 18 or newer.
+### Download
+
+Grab the build for your OS from the [latest release](https://github.com/renanborgez/sikai-macos-mini-keyboard-configurator/releases/latest)
+(or use the buttons at the top). The builds are **not code-signed**:
+
+- **macOS:** open `Mini-Key-mac.dmg` and drag **Mini Key** into Applications. The first time, **right-click → Open → Open**.
+- **Windows:** run `Mini-Key-windows-setup.exe`. If SmartScreen warns you, click **More info → Run anyway**.
+- **Linux (Debian/Ubuntu):** `sudo apt install ./Mini-Key-linux-amd64.deb`. The package adds a udev rule so
+  you can talk to the keyboard without root; unplug and replug it after installing.
+
+### From source
+
+Requirements: [Node.js](https://nodejs.org) 18 or newer (macOS, Windows or Linux).
 
 ```bash
 git clone <this repo>
@@ -164,6 +183,10 @@ open "dist/mac-arm64/Mini Key.app"     # note the quotes: the name contains a sp
 
 You can drag `Mini Key.app` into `/Applications`. The app is **not code-signed**, so the first time
 you open it, **right-click → Open → Open**.
+
+Installers: `npm run dist:mac` (universal `.dmg`), `npm run dist:win` (`.exe`), `npm run dist:linux` (`.deb`, build it on Linux).
+Pushing a `v*` tag runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds all three
+and attaches them to a GitHub release.
 
 ---
 
